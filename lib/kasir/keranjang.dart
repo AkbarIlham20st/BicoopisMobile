@@ -18,15 +18,22 @@ class CartItem {
   final double price;
   String catatan;
   BluetoothDevice? _selectedDevice;
-
+  // int pajaktotal;
+  // int total;
   int qtt;
 
-  CartItem({required this.namaMenu, required this.price, required this.qtt,required this.catatan });
+
+  CartItem({required this.namaMenu, required this.price,
+    // required this.total,
+    // required this.pajaktotal,
+    required this.qtt,required this.catatan });
 
   factory CartItem.fromMap(Map<String, dynamic> m) => CartItem(
     namaMenu: m['menu_name'] as String,
     price: (m['price'] as num).toDouble(),
     qtt: m['qtt'] as int,
+    // total: m['total'] as int,
+    // pajaktotal: m['pajaktotal'] as int,
       catatan: m['catatan'] as String,
 
   );
@@ -176,6 +183,8 @@ class _CartScreenState extends State<CartScreen> {
         'total_item': totalItem,
         'total_harga': totalRp,
         'status': "In Order",
+        'pajak': pajakTotal, // tambahkan ini
+
       });
     } catch (e) {
       _snack('Gagal simpan ke history: $e');
@@ -268,8 +277,7 @@ class _CartScreenState extends State<CartScreen> {
 
 
     try {
-      // --- 1. Cetak Gambar Logo dari Assets ---
-      final ByteData data = await rootBundle.load('assets/Bicopi.jpg');
+      final ByteData data = await rootBundle.load('assets/logo_bicopi.png');
       final Uint8List bytes = data.buffer.asUint8List();
 
       final img.Image? original = img.decodeImage(bytes);
@@ -280,7 +288,7 @@ class _CartScreenState extends State<CartScreen> {
           height: 160,
         );
 
-      if (resized != null) {
+        if (resized != null) {
         // Jika kamu pakai blue_thermal_printer:
         await printer.printImageBytes(img.encodePng(resized));
         printer.printNewLine();
@@ -312,6 +320,7 @@ class _CartScreenState extends State<CartScreen> {
 
           printer.printCustom('-----------------------------------', 1, 0);
           printer.printCustom('Total Item: ${totalItem.toString()}', 2, 0); // 1 = size, 0 = align left
+          printer.printCustom('Pajak 10% : ${fmtRp(pajakTotal)}', 2, 0);
           printer.printCustom('Total Harga: ${fmtRp(totalRp)}', 2, 0);
 
 
@@ -333,7 +342,14 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   int get totalItem => cart.fold(0, (s, e) => s + e.qtt);
-  double get totalRp => cart.fold(0, (s, e) => s + e.qtt * e.price);
+
+  double get total => cart.fold(0, (s, e) => s + e.qtt * e.price);
+
+  double get pajakTotal => total * 0.1; // contoh pajak 10%
+
+
+  double get totalRp => total + pajakTotal;
+
 
   void _snack(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
@@ -371,7 +387,8 @@ class _CartScreenState extends State<CartScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Item: $totalItem', style: bold),
-                Text('Total: Rp ${totalRp.toStringAsFixed(0)}', style: bold),
+                Text('Total: Rp ${total.toStringAsFixed(0)}', style: bold),
+                Text('Pajak: Rp ${totalRp.toStringAsFixed(0)}', style: bold),
               ],
             ),
           ),
