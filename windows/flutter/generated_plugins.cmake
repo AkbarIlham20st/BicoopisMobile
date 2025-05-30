@@ -4,9 +4,11 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  file_selector_windows
   flutter_localization
   print_bluetooth_thermal
   printing
+  rive_common
   url_launcher_windows
 )
 

@@ -35,7 +35,7 @@ dependencies:
 
   supabase_flutter: ^2.9.0
 #  intl: ^0.20.2
-  intl: ^0.19.0
+  intl: ^0.20.2
   pdf: ^3.10.4
   image: ^4.1.3 # versi terbaru saat ini
   printing: ^5.11.2
@@ -45,9 +45,35 @@ dependencies:
   get: ^4.6.5
   google_fonts: ^6.1.0
   month_picker_dialog: ^6.0.3
-  month_year_picker: ^0.4.0+1
+  month_year_picker: ^0.5.0+1
   flutter_localization: ^0.3.2
+  shared_preferences: ^2.2.2
 
+
+  fl_chart: ^1.0.0
+  curved_navigation_bar: ^1.0.3
+  image_picker: ^1.1.2
+  week_of_year: ^2.2.0
+
+  realtime_client: ^2.4.2
+  uuid: ^4.0.0
+
+
+
+  webview_flutter: ^4.0.0
+  carousel_slider: ^5.0.0
+  flutter_slidable: ^4.0.0
+  animations: ^2.0.11
+  lottie: ^3.0.0
+  rive: ^0.13.20
+  flutter_animate: ^4.5.0
+  qr_flutter: ^4.1.0
+  http: ^1.4.0
+  url_launcher: ^6.3.1
+  path_provider: ^2.0.8
+  fluttertoast: ^8.2.1
+  device_preview: ^1.2.0
+  csv: ^6.0.0
   #  flutter_bluetooth_serial: ^0.4.0
 
 
@@ -59,7 +85,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.3
 
   flutter_test:
     sdk: flutter
@@ -71,7 +97,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -81,6 +107,69 @@ flutter:
   assets:
     - assets/Bicopi.jpg
     - assets/Bicopilogo.png
+    - assets/logo_bicopi.png
+    - assets/penghasilan_tambahan.png
+    - assets/fleksibel_praktis.png
+    - assets/reward.jpeg
+    - assets/google.png
+    - assets/icon_money.png
+    - assets/google.png
+    - assets/google.png
+    - assets/google.png
+    - assets/icon_sortir.png
+    - assets/icon_filter.png
+    - assets/profil.png
+    - assets/points.jpg
+
+
+    - assets/makanan.png
+    - assets/menu.csv
+    - assets/kopipangku.png
+    - assets/kentang.png
+    - assets/ayamgeprek.png
+    - assets/tempe.png
+    - assets/bakso.png
+    - assets/ricebowl.png
+    - assets/boba.png
+    - assets/chocolatte.png
+    - assets/not.png
+    - assets/thai_tea.png
+    - assets/nasi_goreng.png
+    - assets/mie_goreng.png
+    - assets/kentang.png
+    - assets/sempol.png
+    - assets/pisang_kipas.png
+    - assets/tahu.png
+    - assets/paketramadhan.png
+    - assets/paketb.jpg
+    - assets/bicopi.jpg
+    - assets/animasi.json
+    - assets/reservasi1.png
+    - assets/reservasi2.png
+    - assets/reservasi3.png
+
+    - assets/bicopi_logo.png
+    - assets/kopiesti.png
+    - assets/icon_cash.png
+    - assets/icon_qris.png
+    - assets/foto_profile.png
+    - assets/backgroundb.png
+    - assets/virtualacc.png
+
+
+    - assets/icon_wa.png
+    - assets/icon_miee.png
+    - assets/icon_minuman1.png
+    - assets/icon_snack1.png
+    - assets/icon_paket1.png
+    - assets/pakethebat.png
+    - assets/whatsapp.png
+
+
+    - assets/indoor1.jpg
+    - assets/indoor2.jpg
+    - assets/outdoor1.jpg
+    - assets/outdoor22.jpg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
