@@ -651,7 +651,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
           if (newMemberResponse.isNotEmpty) {
             _actualMemberIdInMembersTable =
-                newMemberResponse.first['id'] as String; // Update state
+                newMemberResponse.first['id']; // Update state
             print(
                 'PaymentSuccessPage: Member baru dibuat dengan ID: $_actualMemberIdInMembersTable');
           } else {
@@ -688,7 +688,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         }
       } else {
         _actualMemberIdInMembersTable =
-            memberRecord['id'] as String; // Update state dengan PK yang ada
+            memberRecord['id']; // Update state dengan PK yang ada
         print(
             'PaymentSuccessPage: Member ditemukan dengan ID: $_actualMemberIdInMembersTable');
       }
@@ -816,7 +816,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             }
           } else {
             existingAffiliatePoints =
-                affiliateData['total_points'] as int? ?? 0;
+                affiliateData['total_points'] as int;
             await supabase.from('affiliates').update({
               'total_points': existingAffiliatePoints + affiliatePoints
             }).eq('id', affiliateIdOfCurrentMember);
