@@ -99,22 +99,22 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     try {
       // Konversi data order ke format PrintService
       Map<String, dynamic> strukData = {
-        'namaUsaha': 'BICOPI CAFE',
-        'alamat': 'Jl. Contoh No. 123, Surabaya',
-        'telepon': '031-1234567',
+        'namaUsaha': 'Bicopis Indonesian',
+        'alamat': 'Jalan Raya, Jl. Dr. Ir. H. Soekarno Merr No.678, Gn. Anyar, Kec. Gn. Anyar, Surabaya',
+        'telepon': '0878-5580-4679',
         'kasir': 'Admin',
         'noStruk': widget.order.orderNo,
         'tanggal': widget.order.createdAt ?? DateTime.now(),
         'items': widget.order.items.map((item) => {
           'nama': item['nama_menu'].toString(),
           'qty': int.tryParse(item['qty'].toString()) ?? 1,
-          'harga': int.tryParse(item['harga'].toString()) ?? 0,
-          'total': int.tryParse(item['subtotal'].toString()) ?? 0,
+          'harga': double.tryParse(item['harga'].toString()) ?? 0,
+          'total': double.tryParse(item['subtotal'].toString()) ?? 0,
         }).toList(),
-        'subtotal': widget.order.totalHarga.toInt(),
-        'pajak': (widget.order.totalHarga * 0.1).toInt(), // pajak 10%
-        'total': (widget.order.totalHarga * 1.1).toInt(), // total + pajak
-        'bayar': (widget.order.totalHarga * 1.1).toInt(), // asumsi bayar pas
+        'subtotal': widget.order.totalHarga.toDouble(),
+        'pajak': (widget.order.totalHarga * 0.1).toDouble(), // pajak 10%
+        'total': (widget.order.totalHarga * 1.1).toDouble(), // total + pajak
+        'bayar': (widget.order.totalHarga * 1.1).toDouble(), // asumsi bayar pas
         'kembalian': 0,
         'nomorMeja': widget.order.nomorMeja,
       };
@@ -295,11 +295,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                                   Expanded(flex: 3, child: Text(item['nama_menu'].toString())),
                                   Expanded(flex: 1, child: Text('${item['qty']}', textAlign: TextAlign.center)),
                                   Expanded(flex: 2, child: Text(
-                                    NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(int.tryParse(item['harga'].toString()) ?? 0),
+                                    NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(double.tryParse(item['harga'].toString()) ?? 0),
                                     textAlign: TextAlign.right,
                                   )),
                                   Expanded(flex: 2, child: Text(
-                                    NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(int.tryParse(item['subtotal'].toString()) ?? 0),
+                                    NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(double.tryParse(item['subtotal'].toString()) ?? 0),
                                     textAlign: TextAlign.right,
                                   )),
                                 ],

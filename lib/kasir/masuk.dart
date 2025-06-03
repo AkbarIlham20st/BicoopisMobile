@@ -39,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     if (response != null) {
       final int userLevel = response['id_user_level'];
 
-      if (userLevel <= 3) { // Hanya izinkan level 1, 2, 3
+      if (userLevel == 2 || userLevel == 3) { // Hanya izinkan level 1, 2, 3
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login berhasil')),
         );
