@@ -28,12 +28,67 @@ class _PaymentPageState extends State<PaymentPage> {
   bool _isLoading = false;
   String? _memberId;
   bool _isMemberIdLoading = false;
+  String? _userName; // Added to store the user's name
 
   @override
   void initState() {
     super.initState();
     print("PaymentPage initState() called");
     _fetchMemberId();
+    _fetchUserName(); // Call the new function to fetch the user name
+  }
+
+  // New function to fetch the user's name from Supabase auth
+  Future<void> _fetchUserName() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        // --- MODIFICATION HERE ---
+        // Attempt to get 'user_name' from user_metadata.
+        // If not found, fall back to 'email' (though you want 'username' specifically).
+        // If your username is stored in a separate 'profiles' table,
+        // you'll need an additional Supabase query.
+        _userName = user.userMetadata?['user_name']; // Assumes 'user_name' in user_metadata
+
+        // If user_metadata does not contain 'user_name', you might need to fetch from a custom table
+        if (_userName == null || _userName!.isEmpty) {
+          print("PaymentPage: 'user_name' not found in user_metadata. Trying 'users' table.");
+          try {
+            // Assuming you have a 'users' table that stores a 'username' column
+            // and is linked by 'id_user' to auth.users.id
+            final userData = await Supabase.instance.client
+                .from('users') // Your custom users table
+                .select('username') // Select the 'username' column
+                .eq('id_user', user.id) // Link to auth.users.id
+                .maybeSingle(); // Use maybeSingle to get one record or null
+
+            if (userData != null && userData['username'] != null) {
+              _userName = userData['username'] as String;
+              print("PaymentPage fetched username from 'users' table: $_userName");
+            } else {
+              print("PaymentPage: Username not found in 'users' table for user ID: ${user.id}");
+              // Fallback if username is not found anywhere
+              _userName = user.email?.split('@').first; // Use part of email as a last resort
+              print("PaymentPage falling back to email prefix as username: $_userName");
+            }
+          } catch (e) {
+            print("PaymentPage Error fetching username from 'users' table: $e");
+            _userName = user.email?.split('@').first; // Fallback
+            print("PaymentPage falling back to email prefix as username due to error: $_userName");
+          }
+        }
+
+
+        if (_userName != null && _userName!.isNotEmpty) {
+          _nameController.text = _userName!; // Set the text field
+        }
+        print("PaymentPage fetched userName: $_userName");
+      } else {
+        print("PaymentPage: No current user found.");
+      }
+    } catch (e) {
+      print("PaymentPage Error fetching user name: $e");
+    }
   }
 
   Future<void> _fetchMemberId() async {
@@ -91,7 +146,7 @@ class _PaymentPageState extends State<PaymentPage> {
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'order_id':
-                'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString(),
+            'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString(),
             'gross_amount': totalPrice,
             'first_name': name,
             'email': 'example@mail.com', // Replace with user data
@@ -181,27 +236,27 @@ class _PaymentPageState extends State<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
-  print("PaymentPage build() called");
-  return Scaffold(
-    backgroundColor: Colors.grey[50], // Background yang lebih lembut
-    appBar: AppBar(
-      title: const Text(
-        'Pembayaran',
-        style: TextStyle(
-          color: Colors.white, // Ubah ke putih agar kontras dengan background hijau
-          fontWeight: FontWeight.w600,
+    print("PaymentPage build() called");
+    return Scaffold(
+      backgroundColor: Colors.grey[50], // Background yang lebih lembut
+      appBar: AppBar(
+        title: const Text(
+          'Pembayaran',
+          style: TextStyle(
+            color: Colors.white, // Ubah ke putih agar kontras dengan background hijau
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF078603), // Hijau solid
+        elevation: 1, // Sedikit shadow
+        iconTheme: const IconThemeData(color: Colors.white), // Ikon putih
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20), // Melengkung bawah kiri & kanan
+          ),
         ),
       ),
-      centerTitle: true,
-      backgroundColor: Color(0xFF078603), // Hijau solid
-      elevation: 1, // Sedikit shadow
-      iconTheme: const IconThemeData(color: Colors.white), // Ikon putih
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(20), // Melengkung bawah kiri & kanan
-        ),
-      ),
-    ),
       body: Stack(
         children: [
           // Wrap the Padding with SingleChildScrollView to prevent overflow
@@ -265,7 +320,7 @@ class _PaymentPageState extends State<PaymentPage> {
                           child: Text(
                             formatter.format(widget.totalPrice),
                             textAlign:
-                                TextAlign.right, // Align text to the right
+                            TextAlign.right, // Align text to the right
                             style: const TextStyle(
                               fontSize: 14, // Ukuran font agak kecil
                               fontWeight: FontWeight.bold,
@@ -277,33 +332,33 @@ class _PaymentPageState extends State<PaymentPage> {
                     ),
                   ),
                   SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed: _isLoading || _isMemberIdLoading
-        ? null
-        : createTransaction,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Color(0xFF078603),
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      elevation: 2,
-      textStyle: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    child: Text(
-      _isLoading || _isMemberIdLoading
-          ? 'Memproses...'
-          : 'Bayar Sekarang',
-      style: const TextStyle(
-        color: Colors.white,
-      ),
-    ),
-  ),
-),
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading || _isMemberIdLoading
+                          ? null
+                          : createTransaction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF078603),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: Text(
+                        _isLoading || _isMemberIdLoading
+                            ? 'Memproses...'
+                            : 'Bayar Sekarang',
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 20), // Added bottom space
                 ],
@@ -463,9 +518,10 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
           },
         ),
       )
-..loadRequest(Uri.parse(
-    'https://app.sandbox.midtrans.com/snap/v4/redirection/${widget.snapToken}'));
+      ..loadRequest(Uri.parse(
+          'https://app.sandbox.midtrans.com/snap/v4/redirection/${widget.snapToken}'));
   }
+
   @override
   Widget build(BuildContext context) {
     print("MidtransWebViewPage build() called");
@@ -488,6 +544,7 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
   }
 }
 
+//r
 // --- PaymentSuccessPage Class ---
 // --- PaymentSuccessPage Class ---
 
@@ -609,9 +666,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         memberRecord = await supabase
             .from('members')
             .select(
-                'id, total_points, affiliate_id') // Pilih 'id' (PK tabel members)
+            'id, total_points, affiliate_id') // Pilih 'id' (PK tabel members)
             .eq('id_user',
-                widget.memberId) // Menggunakan id_user dari auth.users.id
+            widget.memberId) // Menggunakan id_user dari auth.users.id
             .maybeSingle(); // maybeSingle returns null if no record, or a map if one record
       } on PostgrestException catch (e) {
         print(
@@ -620,7 +677,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
                 content:
-                    Text('Error database saat mencari member: ${e.message}')),
+                Text('Error database saat mencari member: ${e.message}')),
           );
         }
         return;
@@ -644,14 +701,14 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           final List<Map<String, dynamic>> newMemberResponse = await supabase
               .from('members')
               .insert({
-                'id_user': widget.memberId, // Tautkan ke auth.users.id
-                'total_points': 0,
-              }).select(
-                  'id'); // Ambil 'id' (PK) dari member yang baru dibuat. select() returns a list.
+            'id_user': widget.memberId, // Tautkan ke auth.users.id
+            'total_points': 0,
+          }).select(
+              'id'); // Ambil 'id' (PK) dari member yang baru dibuat. select() returns a list.
 
           if (newMemberResponse.isNotEmpty) {
             _actualMemberIdInMembersTable =
-                newMemberResponse.first['id']; // Update state
+            newMemberResponse.first['id'] as String; // Update state
             print(
                 'PaymentSuccessPage: Member baru dibuat dengan ID: $_actualMemberIdInMembersTable');
           } else {
@@ -672,7 +729,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                   content:
-                      Text('Error database saat membuat member: ${e.message}')),
+                  Text('Error database saat membuat member: ${e.message}')),
             );
           }
           return;
@@ -688,7 +745,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         }
       } else {
         _actualMemberIdInMembersTable =
-            memberRecord['id']; // Update state dengan PK yang ada
+        memberRecord['id'] as String; // Update state dengan PK yang ada
         print(
             'PaymentSuccessPage: Member ditemukan dengan ID: $_actualMemberIdInMembersTable');
       }
@@ -701,7 +758,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       // 3. Lanjutkan dengan logika poin menggunakan _actualMemberIdInMembersTable
       int currentMemberTotalPoints = memberRecord?['total_points'] as int? ?? 0;
       final String? affiliateIdOfCurrentMember =
-          memberRecord?['affiliate_id'] as String?;
+      memberRecord?['affiliate_id'] as String?;
 
       // Dapatkan level pengguna dari tabel 'users' (asumsi tabel kustom Anda)
       int currentUserLevel = 1; // Default
@@ -710,9 +767,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             .from('users') // Nama tabel yang menyimpan level pengguna
             .select('id_user_level')
             .eq(
-                'id_user',
-                widget
-                    .memberId) // Menggunakan 'id_user' sebagai kolom untuk mencocokkan widget.memberId
+            'id_user',
+            widget
+                .memberId) // Menggunakan 'id_user' sebagai kolom untuk mencocokkan widget.memberId
             .maybeSingle();
 
         if (userLevelData != null) {
@@ -755,7 +812,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             'PaymentSuccessPage: Member tidak memiliki afiliasi. Member mendapatkan $pointsForPurchasingMember poin.');
       } else {
         pointsForPurchasingMember =
-            0; // Member with affiliate gets 0 points from their own purchase directly
+        0; // Member with affiliate gets 0 points from their own purchase directly
         print(
             'PaymentSuccessPage: Member memiliki afiliasi. Member mendapatkan $pointsForPurchasingMember poin langsung.');
       }
@@ -772,7 +829,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         // Log poin untuk member yang melakukan pembelian
         await supabase.from('member_points_log').insert({
           'member_id':
-              _actualMemberIdInMembersTable, // Menggunakan PK yang sebenarnya dari 'members'
+          _actualMemberIdInMembersTable, // Menggunakan PK yang sebenarnya dari 'members'
           'points_earned': pointsForPurchasingMember,
           'description': 'Poin dari pembelian (ID Pesanan: $orderId)',
           'created_at': DateTime.now().toIso8601String(),
@@ -816,7 +873,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             }
           } else {
             existingAffiliatePoints =
-                affiliateData['total_points'] as int;
+                affiliateData['total_points'] as int? ?? 0;
             await supabase.from('affiliates').update({
               'total_points': existingAffiliatePoints + affiliatePoints
             }).eq('id', affiliateIdOfCurrentMember);
@@ -829,11 +886,11 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             await supabase.from('affiliate_points_log').insert({
               'affiliate_id': affiliateIdOfCurrentMember,
               'member_id':
-                  _actualMemberIdInMembersTable, // Menggunakan PK yang sebenarnya dari 'members'
+              _actualMemberIdInMembersTable, // Menggunakan PK yang sebenarnya dari 'members'
               'order_id': orderId,
               'points_earned': affiliatePoints,
               'description':
-                  'Poin rujukan dari pembelian member ${widget.namaPelanggan} (ID Pesanan: $orderId)',
+              'Poin rujukan dari pembelian member ${widget.namaPelanggan} (ID Pesanan: $orderId)',
               'created_at': DateTime.now().toIso8601String(),
             });
             print(
@@ -854,7 +911,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                   content:
-                      Text('Terjadi kesalahan tak terduga pada afiliasi: $e')),
+                  Text('Terjadi kesalahan tak terduga pada afiliasi: $e')),
             );
           }
         }
@@ -921,8 +978,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         'total_item': cartItems.length,
         'total_harga': widget.totalPrice,
         'created_at': DateTime.now().toIso8601String(),
+        'metode_pembayaran':'tunai',
+        'status_pembayaran':'pending',
         'member_id':
-            _actualMemberIdInMembersTable, // Foreign key to 'members' table
+        _actualMemberIdInMembersTable, // Foreign key to 'members' table
       }).select(); // Use .select() to get the inserted data back
 
       print('PaymentSuccessPage: Save order history response: $response');

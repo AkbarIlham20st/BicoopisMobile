@@ -20,24 +20,21 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-
     fetchPenukaranPoints();
   }
 
   Future<void> fetchPenukaranPoints() async {
     setState(() => isLoading = true);
     try {
-      // Data yang belum dikonfirmasi (is_confirmed null atau kosong)
       final belumKonfirmasi = await supabase
           .from('penukaran_point')
-          .select('id, member_id, penukaran_point, redeemet_at, is_confirmed')
+          .select('id, member_id, affiliate_id, penukaran_point, redeemet_at, is_confirmed')
           .or('is_confirmed.is.null,is_confirmed.eq.')
           .order('redeemet_at', ascending: false);
 
-      // Data yang sudah dikonfirmasi (is_confirmed = 'dikonfirmasi')
       final riwayat = await supabase
           .from('penukaran_point')
-          .select('id, member_id, penukaran_point, redeemet_at, is_confirmed')
+          .select('id, member_id, affiliate_id, penukaran_point, redeemet_at, is_confirmed')
           .eq('is_confirmed', 'dikonfirmasi')
           .order('redeemet_at', ascending: false);
 
@@ -54,10 +51,9 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
 
   Future<void> konfirmasiPoint(dynamic id) async {
     try {
-      // Ambil data penukaran terlebih dahulu
       final data = await supabase
           .from('penukaran_point')
-          .select('member_id, penukaran_point')
+          .select('member_id, affiliate_id, penukaran_point')
           .eq('id', id)
           .single();
 
@@ -67,6 +63,7 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
       }
 
       final memberId = data['member_id'];
+      final affiliateId = data['affiliate_id'];
       final penukaranPoint = int.tryParse(data['penukaran_point'].toString()) ?? 0;
 
       // Update status konfirmasi
@@ -75,35 +72,59 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
           .update({'is_confirmed': 'dikonfirmasi'})
           .eq('id', id);
 
-      // Ambil total_points dari tabel members
-      final memberData = await supabase
-          .from('members')
-          .select('total_points')
-          .eq('id', memberId)
-          .single();
+      if ((memberId != null && memberId.toString().isNotEmpty)) {
+        final memberData = await supabase
+            .from('members')
+            .select('total_points')
+            .eq('id', memberId)
+            .single();
 
-      if (memberData == null || memberData['total_points'] == null) {
-        print('Gagal ambil total_points member');
-        return;
+        if (memberData != null) {
+          int currentPoints = int.tryParse(memberData['total_points'].toString()) ?? 0;
+          int updatedPoints = (currentPoints - penukaranPoint).clamp(0, currentPoints);
+          await supabase
+              .from('members')
+              .update({'total_points': updatedPoints})
+              .eq('id', memberId);
+        }
+      } else if ((affiliateId != null && affiliateId.toString().isNotEmpty)) {
+        final affiliateData = await supabase
+            .from('affiliata')
+            .select('total_points')
+            .eq('id', affiliateId)
+            .single();
+
+        if (affiliateData != null) {
+          int currentPoints = int.tryParse(affiliateData['total_points'].toString()) ?? 0;
+          int updatedPoints = (currentPoints - penukaranPoint).clamp(0, currentPoints);
+          await supabase
+              .from('affiliatea')
+              .update({'total_points': updatedPoints})
+              .eq('id', affiliateId);
+        }
       }
 
-      final currentPoints = int.tryParse(memberData['total_points'].toString()) ?? 0;
-      int updatedPoints = currentPoints - penukaranPoint;
-      if (updatedPoints < 0) updatedPoints = 0;
-
-      // Update total_points
-      await supabase
-          .from('members')
-          .update({'total_points': updatedPoints})
-          .eq('id', memberId);
-
       print('Konfirmasi dan update point berhasil.');
-      fetchPenukaranPoints();
+
+      // Langsung hapus dari list tanpa fetch ulang untuk UX lebih cepat
+      setState(() {
+        penukaranPointsBelumKonfirmasi.removeWhere((element) => element['id'] == id);
+      });
+
+      // Refresh riwayat
+      final riwayat = await supabase
+          .from('penukaran_point')
+          .select('id, member_id, affiliate_id, penukaran_point, redeemet_at, is_confirmed')
+          .eq('is_confirmed', 'dikonfirmasi')
+          .order('redeemet_at', ascending: false);
+      setState(() {
+        penukaranPointsRiwayat = riwayat as List<dynamic>;
+      });
+
     } catch (e) {
       print('Update error: $e');
     }
   }
-
 
   Widget buildList(List<dynamic> data, {bool withButton = true}) {
     if (isLoading) {
@@ -122,6 +143,33 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
         itemBuilder: (context, index) {
           final item = data[index];
           final idValue = item['id'];
+          final memberId = item['member_id'];
+          final affiliateId = item['affiliate_id'];
+
+          // String displayId = (memberId != null && memberId.toString().isNotEmpty)
+          //     ? memberId.toString()
+          //     : (affiliateId != null && affiliateId.toString().isNotEmpty)
+          //     ? 'Affiliate: $affiliateId'
+          //     : 'Member';
+          // final memberId = item['member_id'];
+          // final affiliateId = item['affiliate_id'];
+
+          String displayId = '';
+
+          if (memberId != null && memberId.toString().isNotEmpty) {
+            displayId += 'Member: $memberId';
+          }
+
+          if (affiliateId != null && affiliateId.toString().isNotEmpty) {
+            if (displayId.isNotEmpty) displayId += ' | ';
+            displayId += 'Affiliate: $affiliateId';
+          }
+
+          if (displayId.isEmpty) {
+            displayId = '-';
+          }
+
+
           return Card(
             margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Padding(
@@ -129,8 +177,9 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Member ID: ${item['member_id']}',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  // Text('$displayId',
+                  //     style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('ID Pengguna: $displayId', style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 4),
                   Text('Penukaran Point: ${item['penukaran_point']}'),
                   SizedBox(height: 4),
@@ -140,27 +189,20 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
                   if (withButton) ...[
                     SizedBox(height: 8),
                     ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-          shape: RoundedRectangleBorder(
-          borderRadius:
-          BorderRadius.circular(20),
-          ),
-          ),
-                      onPressed: () {
-                        print('Tombol konfirmasi ditekan untuk id: $idValue');
-                        if (idValue == null) {
-                          print('ID null, tidak bisa update.');
-                          return;
-                        }
-                        konfirmasiPoint(idValue);
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      onPressed: () async {
+                        if (idValue == null) return;
+                        await konfirmasiPoint(idValue);
                       },
-                      child: Text('Konfirmasi',
-          style: TextStyle(fontSize: 16,color: Colors.white)),
-
-
-
-
+                      child: Text(
+                        'Konfirmasi',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
                     ),
                   ]
                 ],
@@ -184,16 +226,15 @@ class _KonfirmasiPenukaranPointScreen extends State<KonfirmasiPenukaranPointScre
       appBar: AppBar(
         title: Text('Penukaran Point', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
-    leading: IconButton(
-    icon: const Icon(Icons.arrow_back, color: Colors.white),
-    onPressed: () => Navigator.pop(context),
-    ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.green, // ✅ Ganti warna garis bawah tab aktif
-          labelColor: Colors.green, // Warna teks tab aktif
-          unselectedLabelColor: Colors.black54, // Warna teks tab yang tidak aktif
-
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white,
           tabs: [
             Tab(text: 'Konfirmasi Point'),
             Tab(text: 'Riwayat'),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:bicopi_pos/customer/reedem_up.dart'; // Pastikan path ini benar untuk PopupPage Anda
+import 'package:bicopi_pos/customer/riwayat_reedem.dart'; // Import the new history page
 
 class RewardPage extends StatefulWidget {
   const RewardPage({super.key, required String memberId});
@@ -124,7 +125,7 @@ class _RewardPageState extends State<RewardPage> {
 
       // 1. Record the transaction to 'penukaran_point'
       final List<Map<String, dynamic>> insertResponse =
-          await supabase.from('penukaran_point').insert({
+      await supabase.from('penukaran_point').insert({
         'member_id': actualMemberId,
         'penukaran_point': pointsToDeduct, // Record points, but don't deduct from total
       }).select('id');
@@ -217,11 +218,11 @@ class _RewardPageState extends State<RewardPage> {
       } else {
         setState(() {
           rewards = List<Map<String, dynamic>>.from(response.map((item) => {
-                "id": item["id"].toString(),
-                "title": item["judul"],
-                "description": item["deskripsi"],
-                "points": item["points"],
-              }));
+            "id": item["id"].toString(),
+            "title": item["judul"],
+            "description": item["deskripsi"],
+            "points": item["points"],
+          }));
         });
       }
     } catch (e) {
@@ -259,15 +260,32 @@ class _RewardPageState extends State<RewardPage> {
             ),
           ),
           child: SafeArea(
-            child: Center(
-              child: Text(
-                "Redeem Point",
-                style: GoogleFonts.robotoSlab(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
+            child: Row( // Use a Row to place title and action button
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space out elements
+              children: [
+                const SizedBox(width: 50), // For left padding/balance
+                Center(
+                  child: Text(
+                    "Redeem Point",
+                    style: GoogleFonts.robotoSlab(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.history, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RiwayatReedemPage(), // Navigate to history page
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -306,16 +324,16 @@ class _RewardPageState extends State<RewardPage> {
                   const SizedBox(height: 8),
                   isLoading
                       ? const CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Color(0xFF66BB6A)))
+                      valueColor:
+                      AlwaysStoppedAnimation<Color>(Color(0xFF66BB6A)))
                       : Text(
-                          "$currentPoints",
-                          style: GoogleFonts.poppins(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF4CAF50),
-                          ),
-                        ),
+                    "$currentPoints",
+                    style: GoogleFonts.poppins(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF4CAF50),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -332,34 +350,34 @@ class _RewardPageState extends State<RewardPage> {
             isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : rewards.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Text(
-                            "Tidak ada reward tersedia saat ini.",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: rewards.length,
-                        itemBuilder: (context, index) {
-                          final reward = rewards[index];
-                          return _buildRewardCard(
-                            context,
-                            reward["id"] ?? "",
-                            reward["title"] ?? "",
-                            reward["points"] ?? 0,
-                            reward["description"] ?? "",
-                          );
-                        },
-                      ),
+                ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "Tidak ada reward tersedia saat ini.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            )
+                : ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: rewards.length,
+              itemBuilder: (context, index) {
+                final reward = rewards[index];
+                return _buildRewardCard(
+                  context,
+                  reward["id"] ?? "",
+                  reward["title"] ?? "",
+                  reward["points"] ?? 0,
+                  reward["description"] ?? "",
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -413,7 +431,7 @@ class _RewardPageState extends State<RewardPage> {
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.green[50],
                     borderRadius: BorderRadius.circular(20),
@@ -433,7 +451,7 @@ class _RewardPageState extends State<RewardPage> {
                       : null, // Set to null to disable the button
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canRedeem
-                        ? Color(0xFF078603)
+                        ? const Color(0xFF078603)
                         : Colors.grey, // Green if enabled, grey if disabled
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
@@ -507,7 +525,7 @@ class _RewardPageState extends State<RewardPage> {
             ),
           ],
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         );
       },
     );
